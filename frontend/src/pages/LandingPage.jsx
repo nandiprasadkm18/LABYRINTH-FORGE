@@ -3,29 +3,7 @@ import {
     Shield, Brain, Network, Eye, Bug, Layers, BarChart3,
     ChevronDown, Zap, Lock, Server, Cpu, Activity, Terminal
 } from 'lucide-react';
-
-/* ── Matrix rain characters ── */
-function MatrixRain() {
-    const cols = useMemo(() => {
-        return Array.from({ length: 40 }, (_, i) => ({
-            left: `${(i / 40) * 100}%`,
-            delay: `${Math.random() * 5}s`,
-            duration: `${3 + Math.random() * 5}s`,
-            chars: Array.from({ length: 20 }, () =>
-                String.fromCharCode(0x30A0 + Math.floor(Math.random() * 96))
-            ).join('\n'),
-        }));
-    }, []);
-    return (
-        <div className="matrix-rain">
-            {cols.map((c, i) => (
-                <span key={i} style={{ left: c.left, animationDelay: c.delay, animationDuration: c.duration, whiteSpace: 'pre' }}>
-                    {c.chars}
-                </span>
-            ))}
-        </div>
-    );
-}
+import CyberCorner from '../components/CyberCorner';
 
 /* ── Feature card ── */
 function FeatureCard({ icon: Icon, title, desc, color }) {
@@ -38,8 +16,9 @@ function FeatureCard({ icon: Icon, title, desc, color }) {
         amber: 'text-neon-amber border-neon-amber/30 hover:border-neon-amber/60 hover:shadow-[0_0_30px_rgba(245,158,11,0.15)]',
     };
     return (
-        <div className={`glass-card p-6 border ${colorMap[color]} transition-all duration-300 opacity-0 animate-slide-up`}>
-            <Icon className={`w-10 h-10 mb-4 ${colorMap[color].split(' ')[0]}`} />
+        <div className={`glass-card p-6 border ${colorMap[color]} transition-all duration-300 opacity-0 animate-slide-up group overflow-hidden`}>
+            <CyberCorner position="top-right" className={colorMap[color].split(' ')[0]} />
+            <Icon className={`w-10 h-10 mb-4 ${colorMap[color].split(' ')[0]} transition-transform group-hover:scale-110`} />
             <h3 className="font-[Orbitron] text-base font-semibold text-white mb-2">{title}</h3>
             <p className="text-gray-400 text-sm leading-relaxed">{desc}</p>
         </div>
@@ -50,48 +29,52 @@ export default function LandingPage({ onNavigate }) {
     return (
         <div className="relative">
             {/* ═══ Hero ═══ */}
-            <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-                <MatrixRain />
+            <section className="relative h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden">
                 {/* Radial gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyber-bg/50 to-cyber-bg pointer-events-none z-[1]" />
 
                 <div className="relative z-[2] text-center px-6 max-w-5xl mx-auto">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-neon-green/30 bg-neon-green/5 mb-8 animate-fade-in">
                         <Activity className="w-4 h-4 text-neon-green animate-pulse" />
-                        <span className="text-neon-green text-sm font-mono">SYSTEM ACTIVE — ALL DEFENSES ONLINE</span>
+                        <span className="text-neon-green text-sm font-mono tracking-widest">SYSTEM ACTIVE — ALL DEFENSES ONLINE</span>
                     </div>
 
-                    <h1 className="font-[Orbitron] text-5xl sm:text-7xl font-black text-white mb-6 leading-tight animate-slide-up">
-                        <span className="text-glow-blue">LABYRINTH</span>{' '}
-                        <span className="text-glow-purple">FORGE</span>
-                    </h1>
+                    <div className="relative p-8 md:p-12 mb-6">
+                        <CyberCorner position="top-left" className="text-neon-blue" />
+                        <CyberCorner position="bottom-right" className="text-neon-purple" />
 
-                    <p className="text-xl sm:text-2xl text-gray-300 mb-4 font-light animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                        AI-Powered Active Defense Engine
-                    </p>
-                    <p className="text-gray-500 max-w-2xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-                        Lure, deceive, and neutralize cyber threats with generative AI honeypots,
-                        polymorphic deception, and real-time attacker profiling.
-                    </p>
+                        <h1 className="font-[Orbitron] text-5xl sm:text-7xl font-black text-white mb-6 leading-tight animate-slide-up">
+                            <span className="text-glow-blue">LABYRINTH</span>{' '}
+                            <span className="text-glow-purple">FORGE</span>
+                        </h1>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: '0.4s' }}>
-                        <button className="btn-neon" onClick={() => onNavigate('warroom')}>
-                            <span className="flex items-center gap-2"><Zap className="w-4 h-4" /> Enter War Room</span>
-                        </button>
-                        <button className="btn-neon btn-neon-green" onClick={() => onNavigate('devsecops')}>
-                            <span className="flex items-center gap-2"><Bug className="w-4 h-4" /> DevSecOps Shield</span>
-                        </button>
+                        <p className="text-xl sm:text-2xl text-gray-300 mb-4 font-light animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                            AI-Powered Active Defense Engine
+                        </p>
+                        <p className="text-gray-500 max-w-2xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+                            Lure, deceive, and neutralize cyber threats with generative AI honeypots,
+                            polymorphic deception, and real-time attacker profiling.
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-slide-up" style={{ animationDelay: '0.4s' }}>
+                            <button className="btn-neon px-8 py-3 text-sm" onClick={() => onNavigate('warroom')}>
+                                <span className="flex items-center gap-2"><Zap className="w-4 h-4" /> Enter War Room</span>
+                            </button>
+                            <button className="btn-neon btn-neon-amber px-8 py-3 text-sm" onClick={() => onNavigate('devsecops')}>
+                                <span className="flex items-center gap-2"><Bug className="w-4 h-4" /> Autonomous Shield</span>
+                            </button>
+                        </div>
                     </div>
 
                     {/* Scroll hint */}
                     <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-float">
-                        <ChevronDown className="w-6 h-6 text-gray-500" />
+                        <ChevronDown className="w-6 h-6 text-gray-500 opacity-50" />
                     </div>
                 </div>
             </section>
 
             {/* ═══ Problem Statement ═══ */}
-            <section className="relative z-10 py-24 px-6">
+            <section className="relative z-10 py-16 px-6">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
                         <h2 className="font-[Orbitron] text-3xl font-bold text-white mb-4 text-glow-blue">THE PROBLEM</h2>
@@ -117,7 +100,7 @@ export default function LandingPage({ onNavigate }) {
             </section>
 
             {/* ═══ Solution ═══ */}
-            <section className="relative z-10 py-24 px-6">
+            <section className="relative z-10 py-16 px-6">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
                         <h2 className="font-[Orbitron] text-3xl font-bold text-white mb-4 text-glow-green">THE SOLUTION</h2>
@@ -133,49 +116,14 @@ export default function LandingPage({ onNavigate }) {
                         <FeatureCard icon={Network} title="Network Deception" desc="Dynamic topology that moves, morphs, and expands the deception surface with every attacker action." color="purple" />
                         <FeatureCard icon={Layers} title="Polymorphic Hosts" desc="Switch between Ubuntu, Windows Server, and IoT device simulations on the fly." color="cyan" />
                         <FeatureCard icon={Lock} title="Honey Tokens" desc="Deploy convincing fake credentials, AWS keys, and config files that trigger alerts on use." color="pink" />
-                        <FeatureCard icon={BarChart3} title="DevSecOps Shield" desc="AI-powered vulnerability scanning that detects flaws, simulates exploits, and generates patches." color="amber" />
+                        <FeatureCard icon={Cpu} title="Autonomous Shield" desc="AI-powered remediation engine that detects flaws, simulate exploits, and refactors insecure code." color="amber" />
                     </div>
                 </div>
             </section>
 
-            {/* ═══ Architecture Diagram ═══ */}
-            <section className="relative z-10 py-24 px-6">
-                <div className="max-w-5xl mx-auto">
-                    <h2 className="font-[Orbitron] text-3xl font-bold text-white mb-12 text-center text-glow-purple">ARCHITECTURE</h2>
-                    <div className="glass-card p-8 font-mono text-sm text-gray-300 overflow-x-auto">
-                        <pre className="leading-relaxed">{`
-  ┌──────────────────────────────────────────────────────────────┐
-  │                    LABYRINTH FORGE PLATFORM                  │
-  ├──────────────────────────────────────────────────────────────┤
-  │                                                              │
-  │   ┌─────────────┐    ┌──────────────┐    ┌──────────────┐   │
-  │   │   ATTACKER   │───▶│   HONEYPOT    │───▶│  AI ENGINE   │   │
-  │   │   (SSH/Web)  │    │   Gateway     │    │  (Mock LLM)  │   │
-  │   └─────────────┘    └──────────────┘    └──────────────┘   │
-  │          │                   │                    │          │
-  │          ▼                   ▼                    ▼          │
-  │   ┌─────────────┐    ┌──────────────┐    ┌──────────────┐   │
-  │   │  KEYSTROKE   │    │   DECEPTION   │    │   PROFILER   │   │
-  │   │  CAPTURE     │    │   SURFACE     │    │   & TURING   │   │
-  │   └─────────────┘    └──────────────┘    └──────────────┘   │
-  │          │                   │                    │          │
-  │          ▼                   ▼                    ▼          │
-  │   ┌────────────────────────────────────────────────────┐    │
-  │   │              WAR ROOM DASHBOARD (React)             │    │
-  │   │  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐   │    │
-  │   │  │Terminal │  │Network │  │Profile │  │Capture │   │    │
-  │   │  │  View   │  │Topology│  │Analysis│  │ Panel  │   │    │
-  │   │  └────────┘  └────────┘  └────────┘  └────────┘   │    │
-  │   └────────────────────────────────────────────────────┘    │
-  │                                                              │
-  └──────────────────────────────────────────────────────────────┘
-            `}</pre>
-                    </div>
-                </div>
-            </section>
 
             {/* ═══ Business Model ═══ */}
-            <section className="relative z-10 py-24 px-6">
+            <section className="relative z-10 py-16 px-6">
                 <div className="max-w-6xl mx-auto">
                     <h2 className="font-[Orbitron] text-3xl font-bold text-white mb-12 text-center text-glow-blue">BUSINESS MODEL</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -189,7 +137,7 @@ export default function LandingPage({ onNavigate }) {
                             {
                                 tier: 'Professional',
                                 price: '$1,499/mo',
-                                features: ['5 Honeypot Instances', 'Advanced AI Profiling', 'Real-time Dashboard', 'Hydra Mode', 'DevSecOps Shield'],
+                                features: ['5 Honeypot Instances', 'Advanced AI Profiling', 'Real-time Dashboard', 'Hydra Mode'],
                                 color: 'neon-blue',
                                 popular: true,
                             },
@@ -226,7 +174,7 @@ export default function LandingPage({ onNavigate }) {
             </section>
 
             {/* ═══ CTA ═══ */}
-            <section className="relative z-10 py-24 px-6">
+            <section className="relative z-10 py-16 px-6">
                 <div className="max-w-3xl mx-auto text-center">
                     <div className="glass-card p-12 border border-neon-blue/30">
                         <Terminal className="w-12 h-12 text-neon-blue mx-auto mb-6" />

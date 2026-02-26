@@ -1,17 +1,21 @@
-"""Labyrinth Forge — FastAPI Backend with WebSocket streaming."""
+import sys
+import os
 import asyncio
 import json
 import random
 import time
+
+# Ensure project root is in path for shield_engine
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from typing import List, Dict, Any, Optional
-from google import genai
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from honeypot import HoneypotSession, DEMO_COMMANDS, DAVE_MESSAGE, KILL_CHAIN_PHASES
+from honeypot import HoneypotSession, DEMO_COMMANDS, DAVE_MESSAGE, KILL_CHAIN_PHASES, PDFReportHandler
 from scanner import scan_code
 
-app = FastAPI(title="Labyrinth Forge API", version="1.0.0")
+app = FastAPI(title="Labyrinth Forge — DevSecOps Shield v2.0", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -44,7 +48,7 @@ class ScanRequest(BaseModel):
 
 class CommandRequest(BaseModel):
     session_id: str
-    command: str
+    command: str # Validated via pydantic if using Field, but I'll add manual check for simplicity
 
 class ModeRequest(BaseModel):
     session_id: str
@@ -86,12 +90,61 @@ def switch_mode(req: ModeRequest):
 def scan_endpoint(req: ScanRequest):
     return scan_code(req.code)
 
+class ExplainRequest(BaseModel):
+    vuln_type: str
+    code_context: str
+
+@app.post("/api/scan/explain")
+def explain_endpoint(req: ExplainRequest):
+    from scanner import shield_ai
+    explanation = shield_ai.explain_vulnerability(req.vuln_type, req.code_context)
+    return {"explanation": explanation}
+
+@app.get("/api/report/download/{session_id}")
+def download_pdf_report(session_id: str):
+    """Session-based PDF download (requires active session)."""
+    session = sessions.get(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found in memory")
+    
+    report = session.generate_report()
+    pdf_handler = PDFReportHandler()
+    pdf_bytes = pdf_handler.generate(report)
+    filename = f"Labyrinth_Incident_{report['report_id']}.pdf"
+    
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
+    )
+
+@app.post("/api/report/generate")
+def generate_pdf_from_data(report: Dict[str, Any]):
+    """Stateless PDF generation (receives data from frontend)."""
+    try:
+        pdf_handler = PDFReportHandler()
+        pdf_bytes = pdf_handler.generate(report)
+        filename = f"Labyrinth_Incident_{report.get('report_id', 'Unknown')}.pdf"
+        
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF Generation Failed: {str(e)}")
+
 @app.get("/api/report/{session_id}")
 def get_report(session_id: str):
     session = sessions.get(session_id)
     if not session:
         return {"error": "Session not found"}
-    # Try to find the attacker IP from session metadata
     return session.generate_report()
 
 @app.get("/api/decoys")
@@ -155,10 +208,13 @@ async def attacker_ws(websocket: WebSocket):
                     "risk_event": session.calculate_command_risk(cmd) > 15
                 })
     except WebSocketDisconnect:
-        sessions.pop(sid, None)
+        report_data = session.generate_report(ip)
+        report_data["session_id"] = sid
+        sessions[sid] = session # Persist live session for 30m
         await broadcast_to_monitors({
             "type": "isolated",
-            "message": "🔌 ATTACKER DISCONNECTED — Session Terminated"
+            "message": "🔌 ATTACKER DISCONNECTED — Session Terminated",
+            "report": report_data
         })
 
 @app.websocket("/ws/monitor")
@@ -239,23 +295,22 @@ async def demo_ws(websocket: WebSocket):
         # Final isolation
         await asyncio.sleep(2.0)
         session.isolated = True
+        report_data = session.generate_report(ip)
+        report_data["session_id"] = sid # Ensure frontend has the SID for download
+        
         await websocket.send_json({
             "type": "isolated",
             "message": "🛑 HACKER ISOLATED — Threat Neutralized",
             "profile": session.get_profile(),
             "attack_intel": session.get_attack_intel(),
-            "report": session.generate_report(ip),
-            "session_log": {
-                "total_commands": session.commands_run,
-                "duration": round(time.time() - session.start_time, 1),
-                "honey_tokens_accessed": sum(1 for c in session.history if any(k in c["cmd"] for k in ["aws_credentials", "prod.env", "deploy_keys", ".env", "shadow"])),
-                "data_exfiltrated": "0 bytes (all decoy)",
-            },
+            "report": report_data,
         })
     except WebSocketDisconnect:
         pass
     finally:
-        sessions.pop(sid, None)
+        # Do NOT pop sid immediately - keep it for 30 minutes for report download
+        # In a real app, use a cleanup task.
+        pass
 
 
 if __name__ == "__main__":

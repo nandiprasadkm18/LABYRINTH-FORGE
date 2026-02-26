@@ -1,19 +1,17 @@
-"""Generative Honeypot Engine — AI-powered fake terminal responses using Gemini."""
 import random
 import time
 import os
 import json
-import requests
-from google import genai
+import sys
+from fpdf import FPDF
+from datetime import datetime
 
-# ── Gemini Configuration ──────────────────────────────
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-client = None
-if GEMINI_API_KEY:
-    try:
-        client = genai.Client(api_key=GEMINI_API_KEY)
-    except Exception as e:
-        print(f"Warning: Failed to initialize Gemini client: {e}")
+# Ensure project root is in path for shield_engine
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# ── Groq AI Configuration (Honeypot Emulation) ─────────
+from shield_engine.llm.groq_client import GroqClient
+shield_ai = GroqClient(model="llama-3.3-70b-versatile")
 
 
 # ── MITRE ATT&CK Kill Chain Mapping ──────────────────
@@ -111,38 +109,28 @@ PHASE_TRANSITIONS = {
 
 
 def _ask_ai(command: str, mode: str, cwd: str) -> str | None:
-    """Generate a realistic terminal response using Gemini."""
-    os_descriptions = {
-        "ubuntu": "Ubuntu 20.04 LTS Linux server (hostname: acme-prod-web01, user: sysadmin)",
-        "windows": "Windows Server 2019 Datacenter (hostname: ACME-DC01, user: Administrator)",
-        "iot": "ARM-based IoT gateway device running embedded Linux (hostname: iot-sensor-GW-0042, user: root)",
-    }
-    os_desc = os_descriptions.get(mode, os_descriptions["ubuntu"])
+    """
+    Generate a realistic terminal response.
+    Uses local Ollama (Llama-3.1) for high-speed, zero-quota emulation.
+    """
+    cmd_base = command.strip().split()[0] if command.strip() else ""
+    
+    # 1. Deterministic Rule Book (High Speed)
+    if cmd_base in ["ls", "dir", "cd", "pwd", "whoami", "id"]:
+        return None # Let standard logic handle these
+    
+    if cmd_base == "netstat" or cmd_base == "ss":
+        return "Active Internet connections (only servers)\nProto Recv-Q Send-Q Local Address           Foreign Address         State      \ntcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN     "
 
-    prompt = f"""SYSTEM: You are a {os_desc} terminal. The current working directory is {cwd}.
-USER COMMAND: {command}
-
-STRICT RULES:
-1. Respond ONLY with the raw terminal output (STDOUT/STDERR).
-2. Do not explain, do not use markdown blocks, do not repeat the command.
-3. If the command is destructive (rm -rf /), simulate the realistic system response or error.
-4. If it's a known file in this Labyrinth scenario, show realistic but fake contents.
-5. Max 15 lines of output."""
-
-    # Use Gemini (Primary and Only AI)
-    if client:
-        try:
-            response = client.models.generate_content(
-                model='gemini-2.0-flash',
-                contents=prompt
-            )
-            text = response.text.strip()
-            # Clean up any potential markdown fluff Gemini might add
-            text = text.replace("```", "").strip()
-            if text:
-                return text
-        except Exception as e:
-            print(f"[Gemini Error] {e}")
+    # 2. Local AI Generation
+    try:
+        os_desc = "Ubuntu 20.04" if mode == "ubuntu" else "Windows Server"
+        prompt = f"SYSTEM: You are a {os_desc} terminal. CWD: {cwd}. Respond to: {command}"
+        response = shield_ai.generate(prompt)
+        if response:
+            return response.replace("```", "").strip()
+    except Exception:
+        pass # Silent fallback
 
     return None
 
@@ -528,37 +516,25 @@ Domain:                    acme.local"""
         return min(40, score) # Max 40 per single command
 
     def get_profile(self) -> dict:
-        """Return hacker profile analysis using Gemini for intelligence."""
-        # 1. Base rule-based metrics (Fallback/Fast)
+        """Return hacker profile analysis. Determinism-first logic with local AI refinement."""
+        # 1. Base rule-based metrics
         skill = "Script Kiddie"
         if self.commands_run > 10: skill = "Intermediate"
         if self.commands_run > 20: skill = "Advanced"
         
         threat = min(100, self.commands_run * 3 + self.frustration)
         
-        # 2. AI Intelligence Analysis (Every 5 commands or on high frustration)
-        if client and (self.commands_run % 5 == 0 or self.frustration > 50):
+        # 2. Local AI Assesment (Conserve resources, only every 10 cmds)
+        if self.commands_run % 10 == 0:
             try:
-                history_str = "\n".join([f"> {h['cmd']}" for h in self.history[-15:]])
-                analysis_prompt = f"""Analyze this attacker's behavior based on their last 15 commands:
-{history_str}
-
-Respond ONLY in JSON format:
-{{
-  "skill_level": "Script Kiddie | Intermediate | Advanced | Pro",
-  "threat_level": 0-100,
-  "intent": "Brief description of what they are trying to do"
-}}"""
-                response = client.models.generate_content(
-                    model='gemini-2.0-flash',
-                    contents=analysis_prompt
-                )
-                ai_data = json.loads(response.text.strip().replace("```json", "").replace("```", ""))
-                skill = ai_data.get("skill_level", skill)
-                threat = ai_data.get("threat_level", threat)
-                # We can store 'intent' in session if needed, but for now just update metrics
-            except Exception as e:
-                print(f"[Profiling AI Error] {e}")
+                history_str = "\n".join([f"> {h['cmd']}" for h in self.history[-10:]])
+                prompt = f"Analyze intent: {history_str}. Return JSON: {{'skill': str, 'threat': int}}"
+                ai_data = shield_ai.generate(prompt, json_format=True)
+                if isinstance(ai_data, dict):
+                    skill = ai_data.get("skill", skill)
+                    threat = ai_data.get("threat", threat)
+            except:
+                pass
 
         return {
             "threat_level": threat,
@@ -748,6 +724,110 @@ Respond ONLY in JSON format:
                 "Conduct threat hunt for similar activity across the network",
             ],
         }
+
+
+class PDFReportHandler(FPDF):
+    def header(self):
+        self.set_fill_color(10, 14, 26)  # cyber-bg
+        self.rect(0, 0, 210, 297, 'F')
+        self.set_font('helvetica', 'B', 15)
+        self.set_text_color(59, 130, 246)  # neon-blue
+        self.cell(0, 10, 'LABYRINTH FORGE - INCIDENT REPORT', 0, 1, 'C')
+        self.ln(5)
+        self.set_draw_color(59, 130, 246)
+        self.line(10, self.get_y(), 200, self.get_y())
+        self.ln(10)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('helvetica', 'I', 8)
+        self.set_text_color(107, 114, 128)
+        self.cell(0, 10, f'Page {self.page_no()} | Generated by Labyrinth Forge AI', 0, 0, 'C')
+
+    def _clean_text(self, text: str) -> str:
+        """Sanitize text for latin-1 encoding used by FPDF standard fonts."""
+        if not text: return ""
+        # Replace common unicode characters that crash FPDF standard fonts
+        replacements = {
+            '\u2014': '-', # em dash
+            '\u2013': '-', # en dash
+            '\u2018': "'", # left single quote
+            '\u2019': "'", # right single quote
+            '\u201c': '"', # left double quote
+            '\u201d': '"', # right double quote
+            '\u2022': '*', # bullet
+            '\u2026': '...', # ellipsis
+        }
+        for u_char, r_char in replacements.items():
+            text = text.replace(u_char, r_char)
+        return text.encode('latin-1', 'replace').decode('latin-1')
+
+    def generate(self, report: dict) -> bytes:
+        self.add_page()
+        
+        # ── Header Info ──
+        self.set_font('helvetica', 'B', 12)
+        self.set_text_color(255, 255, 255)
+        self.cell(0, 10, f'ID: {report["report_id"]}', 0, 1)
+        self.cell(0, 10, f'Attacker IP: {report["attacker_ip"]}', 0, 1)
+        self.cell(0, 10, f'Duration: {report["session_duration"]}s', 0, 1)
+        self.ln(5)
+
+        # ── Threat Assessment ──
+        self.set_fill_color(30, 41, 59)
+        self.set_text_color(239, 68, 68) # neon-red
+        self.set_font('helvetica', 'B', 14)
+        self.cell(0, 10, ' THREAT ASSESSMENT', 0, 1, 'L', True)
+        self.ln(2)
+        self.set_font('helvetica', '', 11)
+        self.set_text_color(230, 230, 230)
+        ta = report["threat_assessment"]
+        self.cell(0, 7, f'Overall Risk Level: {ta["overall_risk"]}%', 0, 1)
+        self.cell(0, 7, f'Skill Level: {ta["skill_level"]}', 0, 1)
+        self.cell(0, 7, f'Frustration Index: {ta["frustration_index"]}%', 0, 1)
+        self.cell(0, 7, f'Classification: {ta["classification"]}', 0, 1)
+        self.ln(10)
+
+        # ── MITRE ATT&CK ──
+        self.set_fill_color(30, 41, 59)
+        self.set_text_color(139, 92, 246) # neon-purple
+        self.set_font('helvetica', 'B', 14)
+        self.cell(0, 10, ' MITRE ATT&CK FRAMEWORK', 0, 1, 'L', True)
+        self.ln(2)
+        self.set_font('helvetica', '', 11)
+        self.set_text_color(230, 230, 230)
+        ma = report["mitre_attack"]
+        self.cell(0, 7, f'Techniques Observed: {ma["techniques_observed"]}', 0, 1)
+        self.cell(0, 7, f'Phases Reached: {ma["phases_reached"]}', 0, 1)
+        self.ln(5)
+        
+        for tech in ma["techniques"][:10]: # Limit to 10 for brevety
+            self.set_font('helvetica', 'B', 10)
+            self.cell(0, 6, self._clean_text(f'[{tech["technique_id"]}] {tech["technique_name"]}'), 0, 1)
+            self.set_font('helvetica', 'I', 9)
+            self.cell(0, 5, self._clean_text(f'Triggered by: {tech["command"]}'), 0, 1)
+            self.ln(2)
+        self.ln(5)
+
+        # ── Timeline ──
+        self.add_page()
+        self.set_fill_color(30, 41, 59)
+        self.set_text_color(6, 182, 212) # neon-cyan
+        self.set_font('helvetica', 'B', 14)
+        self.cell(0, 10, ' COMMAND TIMELINE', 0, 1, 'L', True)
+        self.ln(2)
+        self.set_font('helvetica', '', 9)
+        self.set_text_color(180, 180, 180)
+        
+        for item in report["timeline"][-25:]: # Last 25 commands
+            dt = datetime.fromtimestamp(item["timestamp"]).strftime('%H:%M:%S')
+            risk = "!" * (item["risk_score"] // 10) or "."
+            self.cell(20, 5, f'[{dt}]', 0, 0)
+            self.set_text_color(255, 255, 255)
+            self.cell(0, 5, self._clean_text(f'[{risk}] {item["command"]}'), 0, 1)
+            self.set_text_color(180, 180, 180)
+
+        return self.output()
 
 
 # ── Demo simulation sequence ────────────────────────

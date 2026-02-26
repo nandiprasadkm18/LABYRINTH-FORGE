@@ -3,12 +3,13 @@ import CyberGrid from './components/CyberGrid';
 import LandingPage from './pages/LandingPage';
 import WarRoom from './pages/WarRoom';
 import DevSecOps from './pages/DevSecOps';
+import CyberCorner from './components/CyberCorner';
 import { Shield, Swords, Code2, Home } from 'lucide-react';
 
 const TABS = [
   { id: 'landing', label: 'Home', icon: Home },
   { id: 'warroom', label: 'War Room', icon: Swords },
-  { id: 'devsecops', label: 'DevSecOps', icon: Code2 },
+  { id: 'devsecops', label: 'Shield Engine', icon: Code2 },
 ];
 
 export default function App() {
@@ -21,6 +22,8 @@ export default function App() {
       {/* ── Navigation ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass-card rounded-none border-t-0 border-x-0"
         style={{ borderRadius: 0 }}>
+        <CyberCorner position="bottom-left" className="text-neon-blue opacity-30" />
+        <CyberCorner position="bottom-right" className="text-neon-purple opacity-30" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -40,11 +43,14 @@ export default function App() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 cursor-pointer
-                      ${isActive
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-300 cursor-pointer
+                        ${isActive
                         ? 'bg-neon-blue/20 text-neon-blue border border-neon-blue/40 shadow-[0_0_15px_rgba(59,130,246,0.2)]'
                         : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                       }`}
+                    style={{
+                      clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)'
+                    }}
                   >
                     <Icon className="w-4 h-4" />
                     <span className="hidden sm:inline font-[Orbitron] text-xs tracking-wider">{tab.label}</span>

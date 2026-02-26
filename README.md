@@ -1,6 +1,6 @@
 # 🛡️ LABYRINTH FORGE
 
-**AI-Powered Active Defense & DevSecOps Platform**
+**AI-Powered Active Defense & Security Platform**
 
 A hackathon-ready cybersecurity platform featuring generative AI honeypots, real-time attacker profiling, polymorphic deception, and automated vulnerability scanning.
 
@@ -40,7 +40,6 @@ Labyrinth/
 ├── backend/
 │   ├── main.py              # FastAPI app + WebSocket endpoints
 │   ├── honeypot.py           # Generative honeypot engine (fake filesystems, command processing)
-│   ├── scanner.py            # DevSecOps vulnerability scanner + AI patch generator
 │   └── requirements.txt
 └── frontend/
     ├── src/
@@ -49,8 +48,7 @@ Labyrinth/
     │   ├── index.css          # Global cyber theme (grid, glassmorphism, neon, matrix)
     │   ├── pages/
     │   │   ├── LandingPage.jsx   # Hero + features + architecture + pricing
-    │   │   ├── WarRoom.jsx       # Blue team dashboard (orchestrator)
-    │   │   └── DevSecOps.jsx     # Code scanner + AI patch
+    │   │   └── WarRoom.jsx       # Blue team dashboard (orchestrator)
     │   └── components/
     │       ├── CyberGrid.jsx         # Animated background grid
     │       ├── AttackerTerminal.jsx   # Xterm.js live terminal
@@ -75,7 +73,6 @@ Labyrinth/
 | **Reverse Turing Agent** | "Dave from IT" sends messages to psychologically profile the attacker |
 | **Multi-Modal Decoys** | Fake PDFs, spreadsheets, AWS keys, config files displayed in UI |
 | **Hydra Mode** | Toggle between Ubuntu, Windows Server, and IoT device simulations |
-| **DevSecOps Shield** | Paste code → scan for SQLi/XSS/CMDi → view findings → copy AI-generated patch |
 | **Demo Mode** | One-click full attack simulation from intrusion to isolation |
 
 ---

@@ -9,6 +9,7 @@ import HydraMode from '../components/HydraMode';
 import KillChainTracker from '../components/KillChainTracker';
 import ThreatPrediction from '../components/ThreatPrediction';
 import IncidentReport from '../components/IncidentReport';
+import CyberCorner from '../components/CyberCorner';
 import { Zap, Radio, Wifi, WifiOff } from 'lucide-react';
 
 export default function WarRoom() {
@@ -171,7 +172,10 @@ export default function WarRoom() {
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                     <div className={`w-3 h-3 rounded-full ${demoActive ? 'bg-neon-red animate-pulse' : isolated ? 'bg-neon-green' : 'bg-gray-600'}`} />
-                    <h1 className="font-[Orbitron] text-2xl font-bold text-white text-glow-blue">WAR ROOM</h1>
+                    <h1 className="font-[Orbitron] text-2xl font-bold text-white text-glow-blue relative">
+                        WAR ROOM
+                        <CyberCorner position="top-right" className="text-neon-blue -top-2 -right-6 !w-4 !h-4" />
+                    </h1>
                     {attackerIp && (
                         <span className="font-mono text-sm text-neon-red ml-4">
                             <Wifi className="w-4 h-4 inline mr-1" />
@@ -222,10 +226,16 @@ export default function WarRoom() {
 
                 {/* Right: Panels */}
                 <div className="col-span-12 lg:col-span-5 space-y-4">
-                    <HackerProfile profile={profile} />
+                    <div className="relative">
+                        <CyberCorner position="top-right" className="text-neon-green" />
+                        <HackerProfile profile={profile} />
+                    </div>
                     <ThreatPrediction prediction={prediction} active={demoActive || liveActive} />
                     <DeceptionStatus phase={deceptionPhase} active={demoActive} />
-                    <SystemCapture isolated={isolated} profile={profile} />
+                    <div className="relative">
+                        <CyberCorner position="bottom-left" className="text-neon-purple" />
+                        <SystemCapture isolated={isolated} profile={profile} />
+                    </div>
                 </div>
 
                 {/* Bottom: Network + Decoys / Report */}
