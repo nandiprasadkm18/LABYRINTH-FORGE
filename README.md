@@ -2,7 +2,7 @@
 
 **AI-Powered Active Defense & Security Platform**
 
-A hackathon-ready cybersecurity platform featuring generative AI honeypots, real-time attacker profiling, polymorphic deception, and automated vulnerability scanning.
+A cybersecurity platform featuring generative AI honeypots, real-time attacker profiling, polymorphic deception, and automated vulnerability scanning.
 
 > No paid API keys required — all AI is mocked for demo.
 
@@ -31,37 +31,7 @@ npm run dev
 ### 3. Open in Browser
 Navigate to **http://localhost:5173**
 
----
 
-## Project Structure
-
-```
-Labyrinth/
-├── backend/
-│   ├── main.py              # FastAPI app + WebSocket endpoints
-│   ├── honeypot.py           # Generative honeypot engine (fake filesystems, command processing)
-│   └── requirements.txt
-└── frontend/
-    ├── src/
-    │   ├── App.jsx            # App shell with tab navigation
-    │   ├── main.jsx           # Entry point
-    │   ├── index.css          # Global cyber theme (grid, glassmorphism, neon, matrix)
-    │   ├── pages/
-    │   │   ├── LandingPage.jsx   # Hero + features + architecture + pricing
-    │   │   └── WarRoom.jsx       # Blue team dashboard (orchestrator)
-    │   └── components/
-    │       ├── CyberGrid.jsx         # Animated background grid
-    │       ├── AttackerTerminal.jsx   # Xterm.js live terminal
-    │       ├── NetworkTopology.jsx    # React Flow network graph
-    │       ├── HackerProfile.jsx      # Recharts threat gauges
-    │       ├── DeceptionStatus.jsx    # AI engine status log
-    │       ├── SystemCapture.jsx      # Isolation/capture panel
-    │       ├── DecoyFiles.jsx         # Multi-modal decoy display
-    │       └── HydraMode.jsx          # Ubuntu/Windows/IoT toggle
-    └── vite.config.js
-```
-
----
 
 ## Features
 
